@@ -1,126 +1,152 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Nov  8 19:47:45 2018
-
-@author: christine
-"""
-
-import random
 import tkinter as tk
 from functools import partial
+from numpy import random
 
-main_game_window = tk.Tk()
-main_game_window.title('main game window')
-main_game_window.geometry('400x350')
-main_game_window.withdraw()
 
-#set button text
-w = ''
-for i in range(1, 10):
-    exec('str' + str(i) + ' = tk.StringVar(master = main_game_window, value = w)')
+class NinePalaceGame:
+    def __init__(self):
+        self.main_game_window = tk.Tk()
+        self.main_game_window.title('main game window')
+        self.main_game_window.geometry('400x350')
 
-#set main label
-lb_str = tk.StringVar(master = main_game_window, value = 'Welcome to nine block game!')
-lb = tk.Label(main_game_window, bg = 'yellow', width = 50, height = 5, textvariable = lb_str)
-lb.pack()
+        self.button_group = [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        self.value_group = [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
-#set main frame
-frm = tk.Frame(main_game_window)
-frm.pack()
+        self.player = 'O'
+        self.computer = 'X'
 
-box = list(range(1, 10))
-b = 1
-def change_text(string, t):
-    global box
-    global b
-    
-    #change button text
-    if b != 0:
-        if string.get() == 'O' or string.get() == 'X':
-            pass
+        self.create_choose_one_window()
+        self.create_billboard()
+        self.create_frm()
+        self.create_button_and_value_group()
+        self.reset()
+        self.create_try_again_button()
+        self.main_game_window.mainloop()
+
+    def player_play(self, i, j):
+        if not self.game_is_over and not self.box[i][j]:
+            self.box[i][j] = 1
+            self.value_group[i][j].set(self.dominance)
+            self.dominance = self.computer
+
+    def computer_play(self):
+        if not self.game_is_over:
+            while 1:
+                i, j = random.choice(range(3)), random.choice(range(3))
+                if not self.box[i][j]:
+                    self.box[i][j] = 1
+                    self.value_group[i][j].set(self.computer)
+                    self.dominance = self.player
+                    break
+
+    def judge(self):
+        if self.check_win(self.player):
+            self.game_is_over = 1
+            self.billboard_value.set('Player is win!')
+        elif self.check_win(self.computer):
+            self.game_is_over = 1
+            self.billboard_value.set('Computer is win!')
+        elif self.check_game_over():
+            self.game_is_over = 1
+            self.billboard_value.set('Game over!')
+
+    def check_game_over(self):
+        for i in range(3):
+            for j in range(3):
+                if not self.value_group[i][j].get():
+                    return 0
+        return 1
+
+    def check_win(self, target):
+        for i in range(3):
+            if self.value_group[i][0].get() == self.value_group[i][1].get() == self.value_group[i][2].get() == target:
+                return 1
+            if self.value_group[0][i].get() == self.value_group[1][i].get() == self.value_group[2][i].get() == target:
+                return 1
+
+        if self.value_group[0][0].get() == self.value_group[1][1].get() == self.value_group[2][2].get() == target:
+            return 1
+        elif self.value_group[0][2].get() == self.value_group[1][1].get() == self.value_group[2][0].get() == target:
+            return 1
+        return 0
+
+    def reset(self):
+        self.dominance = self.player
+        self.game_is_over = False
+        self.billboard_value.set('Welcome to nine block game!')
+        self.box = [
+            [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        for i in range(3):
+            for j in range(3):
+                self.value_group[i][j].set("")
+
+        self.main_game_window.withdraw()
+        self.choose_one_window.update()
+        self.choose_one_window.deiconify()
+
+    def create_billboard(self):
+        self.billboard_value = tk.StringVar(
+            master=self.main_game_window, value='Welcome to nine block game!')
+        self.billboard = tk.Label(self.main_game_window, bg='yellow',
+                                  width=40, height=5, textvariable=self.billboard_value)
+        self.billboard.pack()
+
+    def button_function(self, i, j):
+        self.player_play(i, j)
+        self.judge()
+        self.computer_play()
+        self.judge()
+
+    def create_button_and_value_group(self):
+        for i in range(3):
+            for j in range(3):
+                self.value_group[i][j] = tk.StringVar(
+                    master=self.main_game_window, value="")
+                self.button_group[i][j] = tk.Button(
+                    self.frm, textvariable=self.value_group[i][j], width=7, height=3, command=partial(self.button_function, i, j))
+                self.button_group[i][j].grid(row=i+1, column=j+1)
+
+    def create_frm(self):
+        self.frm = tk.Frame(self.main_game_window)
+        self.frm.pack()
+
+    def create_try_again_button(self):
+        self.try_again = tk.Button(self.main_game_window, text='Try again',
+                                   width=10, height=3, command=partial(self.reset))
+        self.try_again.pack(side='bottom')
+
+    def set_O_or_X(self, use):
+        self.player = use
+        if use == 'X':
+            self.computer = 'O'
+            self.computer_play()
         else:
-            string.set(player)
-            box.remove(t)
-        
-    #judge win or loss
-    if ((str1.get() == str2.get() == str3.get() == player) or 
-        (str4.get() == str5.get() == str6.get() == player) or 
-        (str7.get() == str8.get() == str9.get() == player) or 
-        (str1.get() == str4.get() == str7.get() == player) or 
-        (str2.get() == str5.get() == str8.get() == player) or 
-        (str3.get() == str6.get() == str9.get() == player) or 
-        (str1.get() == str5.get() == str9.get() == player) or 
-        (str3.get() == str5.get() == str7.get() == player)):
-        lb_str.set(str(player) + ' is win!')
-        b = 0
-        
-    elif (str1.get() and str2.get() and str3.get() and str4.get() and str5.get() and
-          str6.get() and str7.get() and str8.get() and str9.get()):
-        lb_str.set('Game over!')
-        b = 0
-        
-    else:
-        c = random.choice(box)
-        box.remove(c)
-        exec('str' + str(c) + '.set(computer)')
-        
-    if ((str1.get() == str2.get() == str3.get() == computer) or 
-        (str4.get() == str5.get() == str6.get() == computer) or 
-        (str7.get() == str8.get() == str9.get() == computer) or 
-        (str1.get() == str4.get() == str7.get() == computer) or 
-        (str2.get() == str5.get() == str8.get() == computer) or 
-        (str3.get() == str6.get() == str9.get() == computer) or 
-        (str1.get() == str5.get() == str9.get() == computer) or 
-        (str3.get() == str5.get() == str7.get() == computer)):
-        lb_str.set(str(computer) + ' is win!')
-        b = 0
-        
-    
-#set button
-n = 0
-for i in range(1, 4):
-    for j in range(1, 4):
-        n += 1
-        exec('b' + str(n) + ' = tk.Button(frm, textvariable = str' + str(n) + ', width = 7, height = 3, command = partial(change_text, str' + str(n) + ', ' + str(n) + '))')
-        eval('b' + str(n) + '.grid(row = ' + str(i) + ', column = ' + str(j) + ')')
+            self.computer = 'X'
+        self.dominance = self.player
+        self.choose_one_window.withdraw()
+        self.main_game_window.update()
+        self.main_game_window.deiconify()
 
-def reset():
-    global box
-    global b
-    lb_str.set('Welcome to nine block game!')
-    r = ''
-    for a in range(1, 10):
-        exec('str' + str(a) + '.set(r)')
-    box = list(range(1, 10))
-    b = 1
-try_again = tk.Button(main_game_window, text = 'Try again', width = 10, height = 3, command = partial(reset))
-try_again.pack(side = 'bottom')
+    def create_choose_one_window(self):
+        self.choose_one_window = tk.Toplevel(self.main_game_window)
+        self.choose_one_window.title('choose one window')
+        self.choose_one_window.geometry('500x500')
 
-choose_one_window = tk.Toplevel(main_game_window)
-choose_one_window.title('choose one window')
-choose_one_window.geometry('500x500')
+        choose_one_window_billboard = tk.StringVar(
+            master=self.choose_one_window, value='Choose you want')
+        use_O_or_X = tk.Label(self.choose_one_window, bg='yellow', width=50,
+                              height=5, textvariable=choose_one_window_billboard)
+        use_O_or_X.pack()
 
-label_str = tk.StringVar(master = choose_one_window, value = 'Choose you want')
-use_O_or_X = tk.Label(choose_one_window, bg = 'yellow', width = 50, height = 5,
-                      textvariable = label_str)
-use_O_or_X.pack()
+        use_O = tk.Button(self.choose_one_window, text='I want use O', width=40,
+                          height=5, command=partial(self.set_O_or_X, 'O'))
+        use_O.pack()
+        use_X = tk.Button(self.choose_one_window, text='I want use X', width=40,
+                          height=5, command=partial(self.set_O_or_X, 'X'))
+        use_X.pack()
 
-def set_O_or_X(use = None):
-    global player
-    global computer
-    if use == 'X':
-        player = 'X'
-        computer = 'O'
-    elif use == 'O':
-        player = 'O'
-        computer = 'X'
-    choose_one_window.destroy()
-    main_game_window.deiconify()
-use_O = tk.Button(choose_one_window, text = 'I want use O', width = 40,
-                  height = 5, command = partial(set_O_or_X, 'O'))
-use_O.pack()
-use_X = tk.Button(choose_one_window, text = 'I want use X', width = 40,
-                  height = 5, command = partial(set_O_or_X, 'X'))
-use_X.pack()
 
-main_game_window.mainloop()
+if __name__ == '__main__':
+    game = NinePalaceGame()
